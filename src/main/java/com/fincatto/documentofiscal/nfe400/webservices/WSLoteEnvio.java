@@ -32,9 +32,15 @@ class WSLoteEnvio implements DFLog {
 
     private static final String NFE_ELEMENTO = "NFe";
     private final NFeConfig config;
+    private final NFeAutorizacaoEndpointProvider endpointProvider;
 
     WSLoteEnvio(final NFeConfig config) {
+        this(config, new DefaultNFeAutorizacaoEndpointProvider());
+    }
+
+    WSLoteEnvio(final NFeConfig config, final NFeAutorizacaoEndpointProvider endpointProvider) {
         this.config = config;
+        this.endpointProvider = endpointProvider;
     }
 
     NFLoteEnvioRetorno enviaLoteAssinado(final String loteAssinadoXml, final DFModelo modelo) throws Exception {
@@ -139,8 +145,7 @@ class WSLoteEnvio implements DFLog {
         final NFAutorizador400 autorizador = NFAutorizador400.valueOfTipoEmissao(this.config.getTipoEmissao(),
                 this.config.getCUF());
 
-        final String endpoint = DFModelo.NFE.equals(modelo) ? autorizador.getNfeAutorizacao(this.config.getAmbiente())
-                : autorizador.getNfceAutorizacao(this.config.getAmbiente());
+        final String endpoint = this.endpointProvider.getAutorizacaoEndpoint(modelo, autorizador, this.config.getAmbiente());
         if (endpoint == null) {
             throw new IllegalArgumentException("Nao foi possivel encontrar URL para Autorizacao " + modelo.name()
                     + ", autorizador " + autorizador.name());
